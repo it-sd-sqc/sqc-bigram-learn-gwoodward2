@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -6,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
 
+import static edu.cvtc.bigram.Main.getWordCount;
 import static org.junit.jupiter.api.Assertions.*;
 
 import edu.cvtc.bigram.*;
@@ -61,4 +63,31 @@ class MainTest {
   }
 
   // TODO: Create your test(s) below. /////////////////////////////////////////
+  // NOTE: global variable db and @AfterEach cleanup function is required because if getId() fails it won't close the
+  // connection to the database which causes issues for the reset() test. This ensures all tests aren't influenced
+  // by each other
+  private Connection db;
+  @AfterEach
+  void cleanup() {
+    try {
+      if (db != null && !db.isClosed()) {
+        db.close();
+      }
+    } catch (SQLException e) {
+      // Handle or log the exception if needed
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  void getId() {
+    Main.reset();
+    db = Main.createConnection();
+
+    assertDoesNotThrow(() -> {
+      Main.getId(db, "Liberty's");
+      int wordCount = Main.getWordCount(db);
+      assertTrue(wordCount == 1);
+    });
+  }
 }
